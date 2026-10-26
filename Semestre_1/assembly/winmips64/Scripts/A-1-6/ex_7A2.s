@@ -19,7 +19,7 @@
     ; 0 = aberto | 1 = fechado
     ; 8 portas (0 a 7)
 
-    ori 
+    ori    
 
     jal Bin
     halt
