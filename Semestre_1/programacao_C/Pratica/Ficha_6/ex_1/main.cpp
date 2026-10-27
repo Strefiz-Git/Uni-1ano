@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 #define MAX_ESTUDANTES 100
 #define TAM_NOME 50
 #define NOTA_MAX 20
 #define NOTA_MIN 0
+#define NOTA_POSITIVA 10
 
 typedef struct {
     int dia;
@@ -25,25 +27,29 @@ void continuar(void);
 void limparBuffer(void);
 void menuPrincipal(int quantidade, int quantidadeAvaliados, float percentagemNotasPostivas);
 int lerInteiro(int min, int max);
+float lerFloat(int min, int max);
+char lerString(char string[], int tamanho);
 int lerQuantidadeEstudantes();
 tipoEstudante lerEstudante(void);
 int lerNotasEstudantes(int nota_min, int nota_max);
-void mostrarDados(tipoEstudante estudante[]);
+void mostrarDadosEstudante(tipoEstudante estudante);
+void mostrarDadosTodosEstudantes(tipoEstudante estudantes[], int quantidade);
 tipoData obterDataAtual(void);
 int obterDiaMaximo(int ano, int mes);
 tipoData lerData(void);
 void acrescentaAvaliado(tipoEstudante *estudantes[], int *quantidade);
 int procurarEstudante(tipoEstudante estudantes[], int quantidade);
+int obterQuantidadeAvaliados(tipoEstudante estudantes[], int quantidade);
+float obterPercentagemNotasPostivas(tipoEstudante estudantes[], int quantidade);
 
 int main(void) {
     int quantidade = 0;
-    int quantidadeAvaliados = 0;
-    float percentagemNotasPostivas = 0.0;
     int executar = 1;
     char opcao;
+    quantidade = lerQuantidadeEstudantes();
     do {
         system("cls");
-        menuPrincipal(quantidade, quantidadeAvaliados, percentagemNotasPostivas);
+        menuPrincipal(quantidade, obterQuantidadeAvaliados(), obterPercentagemNotasPostivas());
         scanf(" %c", &opcao);
         limparBuffer();
         switch (opcao) {
@@ -108,6 +114,19 @@ int lerInteiro(int min, int max) {
     return valor;
 }
 
+float lerFloat(int min, int max) {
+    float valor = min;
+    float controlo;
+    do {
+        printf ("Escreva um inteiro entre %f e %f : ", min, max);
+        scanf ("%f", &valor);
+        limparBuffer();
+        if (valor < min || valor > max)
+            printf ("\nERRO!, valor fora da escala\n");
+    }while (valor < min || valor > max || controlo == 0);
+    return valor;
+}
+
 int lerQuantidadeEstudantes() {
     int quantidade = 0;
     printf("Indique a quantidade de estudantes: ");
@@ -125,15 +144,25 @@ tipoEstudante lerEstudante(void) {
     return estudante;
 }
 
-int lerNotasEstudantes(int nota_min, int nota_max) {
-
+void lerNotas(tipoEstudante estudantes[], int quantdade) {
+    int i;
+    // loop para inserir todas as notas e data de avalicao
 }
-
-void mostrarDados(tipoEstudante estudante) {
+void mostrarDadosEstudante(tipoEstudante estudante) {
     printf("Numero: %d\n", estudante.numero);
     printf("Nome: %s\n", estudante.nome);
     printf("Nota: %.2f\n", estudante.nota);
     printf("Data-Avaliacao: %d/%d/%d\n\n", estudante.dataAvalicao.dia, estudante.dataAvalicao.mes, estudante.dataAvalicao.ano);
+}
+
+void mostrarDadosTodosEstudantes(tipoEstudante estudantes[], int quantidade) {
+    if (quantidade > 0) {
+        for (int i = 0; i < quantidade; i++){
+            mostrarDadosEstudante(estudantes[i]);
+        }
+    }else {
+        printf("Nao existem estudantes.\n");
+    }
 }
 
 tipoData obterDataAtual(void) {
@@ -189,5 +218,25 @@ int procurarEstudante(tipoEstudante estudantes[], int quantidade) {
     }while (encontrado == false);
     tipoEstudante estudante = estudantes[encontrado];
     return encontrado;
+}
+
+int obterQuantidadeAvaliados(tipoEstudante estudantes[], int quantidade) {
+    int contador = 0;
+    for (int i = 0; i < quantidade; i++) {
+        if (estudantes[i].nota => NOTA_MIN && estudantes[i].nota <= NOTA_MAX) {
+            contador++;
+        }
+    }
+    return contador;
+}
+
+float obterPercentagemNotasPostivas(tipoEstudante estudantes[], int quantidade) {
+    int contador = 0;
+    for (int i = 0; i < quantidade; i++) {
+        if (estudantes[i].nota >= NOTA_POSITIVA) {
+            contador++;
+        }
+    }
+    return ((float)(contador / quantidade) * 100);
 }
 
