@@ -27,13 +27,17 @@ For:
 
     daddi r5, r5, 1
     j For
-    
+
 FimFor: 
-    daddi r5, r0, 3         ; 4.º elemento
+    daddi r5, r0, 3
+    daddi r3, r0, 2
     dmul r8, r5, r3         ; r8 = i * 2 (offset do elemento)
-    ld r4, Vetor(r8)        ; r4 = Vetor[i] (mesma cena se usar lh, mas utilizado em 16 bits)
+    lh r4, Vetor(r8)        ; r4 = Vetor[i]
     daddi r4, r4, 1
-    sd r4, Vetor(r8)
+    sh r4, Vetor(r8)        ; Vetor[i] = Vetor[i] + 1
+
+
+
 
 FIM: 
     halt
