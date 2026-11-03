@@ -56,6 +56,9 @@ int main(void) {
     int executar = 1;
     char opcao;
 
+    // sem buffer: o texto aparece logo, antes do system("cls") correr
+    setvbuf(stdout, NULL, _IONBF, 0);
+
     quantidade = lerQuantidadeEstudantes();
     for (int i = 0; i < quantidade; i++) {
         printf("\n--- Estudante %d de %d ---\n", i + 1, quantidade);
