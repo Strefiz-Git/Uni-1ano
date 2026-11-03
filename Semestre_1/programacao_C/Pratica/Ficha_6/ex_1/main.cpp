@@ -66,7 +66,7 @@ int main(void) {
     }
 
     do {
-        system("cls");
+        printf("\n\n"); // em vez de system("cls"), que apagava o menu em algumas consolas
         menuPrincipal(quantidade, obterQuantidadeAvaliados(estudantes, quantidade), obterPercentagemNotasPostivas(estudantes, quantidade));
         scanf(" %c", &opcao);
         limparBuffer();
