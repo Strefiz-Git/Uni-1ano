@@ -59,10 +59,10 @@ int main(void) {
     // sem buffer: o texto aparece logo, antes do system("cls") correr
     setvbuf(stdout, NULL, _IONBF, 0);
 
-    quantidade = lerQuantidadeEstudantes();
-    for (int i = 0; i < quantidade; i++) {
-        printf("\n--- Estudante %d de %d ---\n", i + 1, quantidade);
-        estudantes[i] = lerEstudante(estudantes, i);
+    int total = lerQuantidadeEstudantes();
+    for (int i = 0; i < total; i++) {
+        printf("\n--- Estudante %d de %d ---\n", i + 1, total);
+        acrescentaAvaliado(estudantes, &quantidade);
     }
 
     do {
@@ -290,7 +290,14 @@ void acrescentaAvaliado(tipoEstudante estudantes[], int *quantidade) {
         printf("Erro! Ja atingiu o maximo de %d estudantes.\n", MAX_ESTUDANTES);
         return;
     }
-    estudantes[*quantidade] = lerEstudante(estudantes, *quantidade);
+    tipoEstudante novo = lerEstudante(estudantes, *quantidade);
+    printf("Nota final (%d se nao foi avaliado)\n", NOTA_NAO_AVALIADO);
+    novo.nota = lerInteiro(NOTA_NAO_AVALIADO, NOTA_MAX);
+    if (novo.nota != NOTA_NAO_AVALIADO) {
+        printf("Data da avaliacao:\n");
+        novo.dataAvalicao = lerData();
+    }
+    estudantes[*quantidade] = novo;
     (*quantidade)++;
     printf("Estudante acrescentado com sucesso!\n");
 }
