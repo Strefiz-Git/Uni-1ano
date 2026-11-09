@@ -302,7 +302,6 @@ void acrescentaAvaliado(tipoEstudante estudantes[], int *quantidade) {
     printf("Estudante acrescentado com sucesso!\n");
 }
 
-// devolve a posicao do estudante ou -1 se nao existir
 int procurarEstudante(tipoEstudante estudantes[], int quantidade, int numero) {
     int encontrado = -1;
     for (int i = 0; i < quantidade && encontrado == -1; i++) {
