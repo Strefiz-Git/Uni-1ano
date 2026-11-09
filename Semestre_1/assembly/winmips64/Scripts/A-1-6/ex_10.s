@@ -1,128 +1,133 @@
 ; =============================================================================
 ; ex_10.s - rotina Max (maior de 2 inteiros), com pilha
 ;
-; Este ficheiro junta as alineas a) a f) numa so versao final:
+; Alineas:
 ;   a) programa de teste da rotina                -> Rotina1 + Max
 ;   b) parametros de entrada passados pela pilha  -> A e B empilhados
 ;   c) variavel local na pilha (i = 6; i++)       -> dentro de Max
-;   d) guardar/restaurar $s0 (r16) na pilha       -> prologo/epilogo de Max
+;   d) guardar/restaurar $s0 na pilha             -> prologo/epilogo de Max
 ;   e) resultado devolvido pela pilha             -> espaco reservado pelo caller
-;   f) Rotina1 pede valores, chama Max, mostra    -> guarda/restaura r31 ($ra)
+;   f) Rotina1 pede valores, chama Max, mostra    -> guarda/restaura $ra
 ;
+; O $ e so o prefixo que marca um nome de registo ($sp = r29, etc).
+;   $zero = r0   $v0 = r2   $a0,$a1 = r4,r5   $t0..$t7 = r8..r15
+;   $s0..$s7 = r16..r23   $sp = r29   $ra = r31
+; Convencao: $t*, $a*, $v* podem ser estragados por qualquer rotina;
+;            $s* tem de ser reposto por quem os usar (por isso a alinea d).
 ; Convencao CR/DR: ver o topo do ex_test4.s
-; Nomes MIPS -> WinMIPS64:  $sp = r29   $ra = r31   $s0 = r16
 ; =============================================================================
 
         .data
 CR:         .word32 0x10000
 DR:         .word32 0x10008
-MsgPedeA:   .asciiz "Introduza o 1o inteiro: "
-MsgPedeB:   .asciiz "Introduza o 2o inteiro: "
+MsgPedeA:   .asciiz "Introduza o 1o num inteiro: "
+MsgPedeB:   .asciiz "Introduza o 2o num inteiro: "
 MsgMaior:   .asciiz "O maior e: "
 
-; R1: CR   R2: DR   R4: A   R5: B   R6: resultado   R8: endereco da string
-; R9: codigo para CR   R16 ($s0): usado dentro de Max   R29: pilha   R31: $ra
+; $s1: CR   $s2: DR   $t0: A   $t1: B   $t3: codigo para CR
+; $a0: string a mostrar (em ESCREVE) / A (em Max)   $a1: B (em Max)
+; $v0: resultado   $s0: usado dentro de Max
 
         .text
-        lwu   r1, CR(r0)          ; r1 = endereco de CR
-        lwu   r2, DR(r0)          ; r2 = endereco de DR
-        daddi r29, r0, 0x200      ; inicializa a pilha (cresce para baixo)
+        lwu   $s1, CR($zero)          ; $s1 = endereco de CR
+        lwu   $s2, DR($zero)          ; $s2 = endereco de DR
+        daddi $sp, $zero, 0x200       ; inicializa a pilha (cresce para baixo)
 
-        jal   Rotina1             ; f) o programa principal so chama a Rotina1
+        jal   Rotina1
         halt
 
 ; =============================================================================
 ; Rotina1: pede dois valores, chama Max, mostra o maior
 ; =============================================================================
 Rotina1:
-        ; f) guardar $ra na pilha: Rotina1 vai fazer jal (PRINT e Max), e cada
-        ; jal escreve em r31. Sem isto, o jr r31 do fim voltava ao sitio errado.
-        daddi r29, r29, -8
-        sd    r31, 0(r29)
+        ; f) guardar $ra: vamos fazer jal (ESCREVE e Max) e cada jal escreve em $ra
+        daddi $sp, $sp, -8
+        sd    $ra, 0($sp)
 
         ; ---- pedir A ----
-        daddi r8, r0, MsgPedeA
-        jal   PRINT
-        daddi r9, r0, 8           ; CR = 8 (ler do teclado)
-        sd    r9, (r1)
-        ld    r4, (r2)            ; r4 = A
+        daddi $a0, $zero, MsgPedeA
+        jal   ESCREVE
+        daddi $t3, $zero, 8           ; CR = 8 (ler do teclado)
+        sd    $t3, 0($s1)
+        ld    $t0, 0($s2)             ; $t0 = A
 
         ; ---- pedir B ----
-        daddi r8, r0, MsgPedeB
-        jal   PRINT
-        daddi r9, r0, 8
-        sd    r9, (r1)
-        ld    r5, (r2)            ; r5 = B
+        daddi $a0, $zero, MsgPedeB
+        jal   ESCREVE
+        daddi $t3, $zero, 8
+        sd    $t3, 0($s1)
+        ld    $t1, 0($s2)             ; $t1 = B
 
-        ; b) passar os parametros pela pilha (empilha A, depois B)
-        daddi r29, r29, -8
-        sd    r4, 0(r29)          ; push A
-        daddi r29, r29, -8
-        sd    r5, 0(r29)          ; push B
+        ; b) parametros pela pilha
+        daddi $sp, $sp, -8
+        sd    $t0, 0($sp)             ; push A
+        daddi $sp, $sp, -8
+        sd    $t1, 0($sp)             ; push B
 
-        ; e) reservar na pilha o espaco para o resultado
-        daddi r29, r29, -8        ; slot do resultado (por preencher)
+        ; e) espaco na pilha para o resultado
+        daddi $sp, $sp, -8
 
-        ; Pilha neste momento (do topo para baixo):
-        ;   0(sp) = resultado (vazio)    8(sp) = B    16(sp) = A
+        ; Pilha: 0($sp) = resultado   8($sp) = B   16($sp) = A
 
         jal   Max
 
-        ld    r6, 0(r29)          ; e) r6 = resultado, lido da pilha
-        daddi r29, r29, 24        ; limpa o resultado, B e A (3 x 8 bytes)
+        ld    $v0, 0($sp)             ; e) resultado lido da pilha
+        daddi $sp, $sp, 24            ; limpa resultado, B e A
 
         ; ---- mostrar o maior ----
-        daddi r8, r0, MsgMaior
-        jal   PRINT
-        sd    r6, (r2)
-        daddi r9, r0, 2           ; CR = 2 (inteiro com sinal)
-        sd    r9, (r1)
+        daddi $a0, $zero, MsgMaior
+        jal   ESCREVE
+        sd    $v0, 0($s2)
+        daddi $t3, $zero, 2           ; CR = 2 (inteiro com sinal)
+        sd    $t3, 0($s1)
 
-        ; f) restabelecer $ra e voltar ao programa principal
-        ld    r31, 0(r29)
-        daddi r29, r29, 8
-        jr    r31
+        ; f) restabelecer $ra e voltar
+        ld    $ra, 0($sp)
+        daddi $sp, $sp, 8
+        jr    $ra
 
 ; =============================================================================
 ; Max: recebe A e B pela pilha, devolve o maior pela pilha
 ;
-; Ao entrar:           0(sp) = resultado   8(sp) = B   16(sp) = A
-; Depois do prologo:   0(sp) = $s0 guardado   8(sp) = i
-;                      16(sp) = resultado  24(sp) = B  32(sp) = A
+; Depois do prologo:  0($sp) = $s0 guardado   8($sp) = i
+;                     16($sp) = resultado  24($sp) = B  32($sp) = A
 ; =============================================================================
 Max:
-        ; ---- prologo: abre a frame de Max (2 x 8 bytes) ----
-        daddi r29, r29, -16
-        sd    r16, 0(r29)         ; d) guarda $s0 (r16) do caller
+        daddi $sp, $sp, -16           ; abre a frame de Max
+        sd    $s0, 0($sp)             ; d) guarda $s0 do caller
 
-        ; c) variavel local i na pilha:  i = 6;  i++;
-        daddi r8, r0, 6
-        sd    r8, 8(r29)          ; i = 6
-        ld    r8, 8(r29)
-        daddi r8, r8, 1
-        sd    r8, 8(r29)          ; i++  (i fica a 7; nao influencia o maximo)
+        ; c) variavel local i:  i = 6;  i++;
+        daddi $t4, $zero, 6
+        sd    $t4, 8($sp)             ; i = 6
+        ld    $t4, 8($sp)
+        daddi $t4, $t4, 1
+        sd    $t4, 8($sp)             ; i++
 
-        ; ---- corpo: maximo de A e B ----
-        ld    r16, 32(r29)        ; $s0 = A  (d: aqui usamos o $s0 como registo extra)
-        ld    r10, 24(r29)        ; r10 = B
+        ld    $a0, 32($sp)            ; $a0 = A
+        ld    $a1, 24($sp)            ; $a1 = B
 
-        slt   r11, r16, r10       ; r11 = (A < B)
-        beqz  r11, GuardaMax      ; se A >= B, o maior ja esta' em $s0
-        daddi r16, r10, 0         ; senao $s0 = B
+        slt   $s0, $a0, $a1           ; d) $s0 = (A < B)
+        bnez  $s0, a1Maior
+
+a0MaiorOuIgual:
+        dadd  $v0, $a0, $zero         ; $v0 = A
+        j     GuardaMax
+
+a1Maior:
+        dadd  $v0, $a1, $zero         ; $v0 = B
 
 GuardaMax:
-        sd    r16, 16(r29)        ; e) escreve o resultado no slot reservado pelo caller
+        sd    $v0, 16($sp)            ; e) resultado no slot reservado
 
-        ; ---- epilogo ----
-        ld    r16, 0(r29)         ; d) restabelece $s0 antes de sair
-        daddi r29, r29, 16        ; fecha a frame de Max
-        jr    r31
+        ld    $s0, 0($sp)             ; d) restabelece $s0
+        daddi $sp, $sp, 16            ; fecha a frame
+        jr    $ra
 
 ; =============================================================================
-; PRINT: mostra a string cujo endereco esta' em r8
+; ESCREVE: mostra a string cujo endereco esta em $a0
 ; =============================================================================
-PRINT:``
-        sd    r8, (r2)
-        daddi r9, r0, 4
-        sd    r9, (r1)
-        jr    r31I
+ESCREVE:
+        sd    $a0, 0($s2)
+        daddi $t3, $zero, 4
+        sd    $t3, 0($s1)
+        jr    $ra
