@@ -31,9 +31,8 @@ void continuar(void);
 void limparBuffer(void);
 void menuPrincipal(int quantidade, int quantidadeAvaliados, float percentagemNotasPostivas);
 int lerInteiro(int min, int max);
-float lerFloat(int min, int max);
 void lerString(char string[], int tamanho);
-int lerQuantidadeEstudantes(void);
+int lerQuantidadeEstudantes(int maximo);
 tipoEstudante lerEstudante(tipoEstudante estudantes[], int quantidade);
 void lerNotas(tipoEstudante estudantes[], int quantidade);
 void mostrarDadosEstudante(tipoEstudante estudante);
@@ -42,6 +41,7 @@ tipoData obterDataAtual(void);
 int obterDiaMaximo(int ano, int mes);
 tipoData lerData(void);
 void acrescentaAvaliado(tipoEstudante estudantes[], int *quantidade);
+void acrescentaVariosEstudantes(tipoEstudante estudantes[], int *quantidade);
 int procurarEstudante(tipoEstudante estudantes[], int quantidade, int numero);
 int obterQuantidadeAvaliados(tipoEstudante estudantes[], int quantidade);
 float obterPercentagemNotasPostivas(tipoEstudante estudantes[], int quantidade);
@@ -67,7 +67,7 @@ int main(void) {
         opcao = toupper(opcao);
         switch (opcao) {
             case 'A':
-                acrescentaAvaliado(estudantes, &quantidade);
+                acrescentaVariosEstudantes(estudantes, &quantidade);
                 continuar();
                 break;
             case 'I':
@@ -149,22 +149,6 @@ int lerInteiro(int min, int max) {
     return valor;
 }
 
-float lerFloat(int min, int max) {
-    float valor = min;
-    int controlo;
-    do {
-        printf("Escreva um numero entre %d e %d : ", min, max);
-        controlo = scanf("%f", &valor);
-        limparBuffer();
-        if (controlo == 0) {
-            printf("\nERRO!, nao escreveu um numero\n");
-        } else if (valor < min || valor > max) {
-            printf("\nERRO!, valor fora da escala\n");
-        }
-    } while (controlo == 0 || valor < min || valor > max);
-    return valor;
-}
-
 void lerString(char string[], int tamanho) {
     do {
         fgets(string, tamanho, stdin);
@@ -180,11 +164,10 @@ void lerString(char string[], int tamanho) {
     } while (strlen(string) == 0);
 }
 
-int lerQuantidadeEstudantes(void) {
-    int quantidade = 0;
-    printf("Indique a quantidade de estudantes: ");
-    quantidade = lerInteiro(0, MAX_ESTUDANTES);
-    return quantidade;
+// pede a quantidade de estudantes a acrescentar (0 cancela, maximo = lugares livres)
+int lerQuantidadeEstudantes(int maximo) {
+    printf("Quantos estudantes quer acrescentar (0 para cancelar)?\n");
+    return lerInteiro(0, maximo);
 }
 
 tipoEstudante lerEstudante(tipoEstudante estudantes[], int quantidade) {
@@ -302,6 +285,20 @@ void acrescentaAvaliado(tipoEstudante estudantes[], int *quantidade) {
     estudantes[*quantidade] = novo;
     (*quantidade)++;
     printf("Estudante acrescentado com sucesso!\n");
+}
+
+// pergunta quantos estudantes acrescentar e le os dados de cada um
+void acrescentaVariosEstudantes(tipoEstudante estudantes[], int *quantidade) {
+    int livres = MAX_ESTUDANTES - *quantidade;
+    if (livres <= 0) {
+        printf("Erro! Ja atingiu o maximo de %d estudantes.\n", MAX_ESTUDANTES);
+        return;
+    }
+    int total = lerQuantidadeEstudantes(livres);
+    for (int i = 0; i < total; i++) {
+        printf("\n--- Estudante %d de %d ---\n", i + 1, total);
+        acrescentaAvaliado(estudantes, quantidade);
+    }
 }
 
 int procurarEstudante(tipoEstudante estudantes[], int quantidade, int numero) {
