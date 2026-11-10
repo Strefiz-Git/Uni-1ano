@@ -56,17 +56,11 @@ int main(void) {
     int executar = 1;
     char opcao;
 
-    // sem buffer: o texto aparece logo, antes do system("cls") correr
+    // sem buffer: o texto aparece logo
     setvbuf(stdout, NULL, _IONBF, 0);
 
-    int total = lerQuantidadeEstudantes();
-    for (int i = 0; i < total; i++) {
-        printf("\n--- Estudante %d de %d ---\n", i + 1, total);
-        acrescentaAvaliado(estudantes, &quantidade);
-    }
-
     do {
-        printf("\n\n"); // em vez de system("cls"), que apagava o menu em algumas consolas
+        printf("\n\n");
         menuPrincipal(quantidade, obterQuantidadeAvaliados(estudantes, quantidade), obterPercentagemNotasPostivas(estudantes, quantidade));
         scanf(" %c", &opcao);
         limparBuffer();
@@ -93,10 +87,14 @@ int main(void) {
                 gravaFicheiroTexto(estudantes, quantidade);
                 continuar();
                 break;
-            case 'L':
-                quantidade = leFicheiroBinario(estudantes);
+            case 'L': {
+                int lidos = leFicheiroBinario(estudantes);
+                if (lidos >= 0) { // so substitui os dados se a leitura correu bem
+                    quantidade = lidos;
+                }
                 continuar();
                 break;
+            }
             case 'F':
                 printf("Fim do programa!\n");
                 executar = 0;
@@ -224,6 +222,10 @@ void lerNotas(tipoEstudante estudantes[], int quantidade) {
         estudantes[i].nota = lerInteiro(NOTA_NAO_AVALIADO, NOTA_MAX);
         if (estudantes[i].nota != NOTA_NAO_AVALIADO) {
             estudantes[i].dataAvalicao = data;
+        } else {
+            estudantes[i].dataAvalicao.dia = 0;
+            estudantes[i].dataAvalicao.mes = 0;
+            estudantes[i].dataAvalicao.ano = 0;
         }
     }
 }
@@ -362,21 +364,27 @@ void gravaFicheiroBinario(tipoEstudante estudantes[], int quantidade) {
     printf("Dados gravados em %s\n", FICHEIRO_BINARIO);
 }
 
-// devolve a quantidade de estudantes lidos
+// devolve a quantidade de estudantes lidos, ou -1 se der erro (dados em memoria ficam intactos)
 int leFicheiroBinario(tipoEstudante estudantes[]) {
     int quantidade = 0;
+    tipoEstudante temporarios[MAX_ESTUDANTES];
     FILE *ficheiro = fopen(FICHEIRO_BINARIO, "rb");
     if (ficheiro == NULL) {
         printf("Erro ao abrir o ficheiro %s!\n", FICHEIRO_BINARIO);
-        return 0;
+        return -1;
     }
     if (fread(&quantidade, sizeof(int), 1, ficheiro) != 1 || quantidade < 0 || quantidade > MAX_ESTUDANTES) {
         printf("Ficheiro invalido!\n");
         fclose(ficheiro);
-        return 0;
+        return -1;
     }
-    quantidade = (int)fread(estudantes, sizeof(tipoEstudante), quantidade, ficheiro);
+    if ((int)fread(temporarios, sizeof(tipoEstudante), quantidade, ficheiro) != quantidade) {
+        printf("Ficheiro invalido ou incompleto!\n");
+        fclose(ficheiro);
+        return -1;
+    }
     fclose(ficheiro);
+    memcpy(estudantes, temporarios, sizeof(tipoEstudante) * quantidade);
     printf("Lidos %d estudantes de %s\n", quantidade, FICHEIRO_BINARIO);
     return quantidade;
 }
