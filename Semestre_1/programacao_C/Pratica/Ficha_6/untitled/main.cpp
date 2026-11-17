@@ -404,8 +404,14 @@ void converterParaMaiusculas(char texto[]) {
  *       Se abriste, nao te esquecas do fclose!
  * --------------------------------------------------------------- */
 int ficheiroExiste(const char nomeDoFicheiro[]) {
-    /* TODO */
-    return -1;
+    FILE *f = fopen(nomeDoFicheiro, "r");
+
+    if (f == NULL) {
+        return 0;
+    }
+
+    fclose(f);
+    return 1;
 }
 
 /* ---------------------------------------------------------------
@@ -415,8 +421,19 @@ int ficheiroExiste(const char nomeDoFicheiro[]) {
  * DICA: modo "w", fprintf(f, "%d\n", ...), fclose. Testa o NULL.
  * --------------------------------------------------------------- */
 int gravarVetorEmTexto(const char nomeDoFicheiro[], const int vetor[], int tamanho) {
-    /* TODO */
-    return -1;
+    FILE *f = fopen(nomeDoFicheiro, "w");
+    int i;
+
+    if (f == NULL) {
+        return 0;
+    }
+
+    for (i = 0; i < tamanho; i++) {
+        fprintf(f, "%d\n", vetor[i]);
+    }
+
+    fclose(f);
+    return 1;
 }
 
 /* ---------------------------------------------------------------
@@ -429,8 +446,16 @@ int gravarVetorEmTexto(const char nomeDoFicheiro[], const int vetor[], int taman
  *       NAO uses feof() como condicao do ciclo!
  * --------------------------------------------------------------- */
 int lerVetorDeTexto(const char nomeDoFicheiro[], int vetor[], int capacidade) {
-    /* TODO */
-    return -2;
+    if (ficheiroExiste(nomeDoFicheiro)) {
+        FILE *f = fopen(nomeDoFicheiro, "r");
+        int quantidade = 0;
+        while (quantidade < capacidade && fscanf(f, "%d", &vetor[quantidade]) == 1) {
+            quantidade++;
+        }
+        fclose(f);
+        return quantidade;
+    }
+    return -1;
 }
 
 /* ---------------------------------------------------------------
