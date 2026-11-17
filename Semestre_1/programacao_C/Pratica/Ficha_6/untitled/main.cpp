@@ -446,16 +446,19 @@ int gravarVetorEmTexto(const char nomeDoFicheiro[], const int vetor[], int taman
  *       NAO uses feof() como condicao do ciclo!
  * --------------------------------------------------------------- */
 int lerVetorDeTexto(const char nomeDoFicheiro[], int vetor[], int capacidade) {
-    if (ficheiroExiste(nomeDoFicheiro)) {
-        FILE *f = fopen(nomeDoFicheiro, "r");
-        int quantidade = 0;
-        while (quantidade < capacidade && fscanf(f, "%d", &vetor[quantidade]) == 1) {
-            quantidade++;
-        }
-        fclose(f);
-        return quantidade;
+    FILE *f = fopen(nomeDoFicheiro, "r");
+    int quantidade = 0;
+
+    if (f == NULL) {
+        return -1;
     }
-    return -1;
+
+    while (quantidade < capacidade && fscanf(f, "%d", &vetor[quantidade]) == 1) {
+        quantidade++;
+    }
+
+    fclose(f);
+    return quantidade;
 }
 
 /* ---------------------------------------------------------------
