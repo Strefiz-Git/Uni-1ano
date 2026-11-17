@@ -287,7 +287,8 @@ int lerSimOuNao(const char mensagem[]) {
  * DICA: ja tens a funcao que espera por um ENTER: limparBufferTeclado.
  * --------------------------------------------------------------- */
 void esperarPorEnter(void) {
-    /* TODO */
+    printf("Pressione ENTER para continuar...");
+    limparBufferTeclado();
 }
 
 
@@ -300,8 +301,14 @@ void esperarPorEnter(void) {
  * O QUE FAZ: devolve a soma dos primeiros "tamanho" elementos. Vetor vazio = 0.
  * --------------------------------------------------------------- */
 int somarVetor(const int vetor[], int tamanho) {
-    /* TODO */
-    return -1;
+    int soma = 0;
+    int i;
+
+    for (i = 0; i < tamanho; i++) {
+        soma += vetor[i];
+    }
+
+    return soma;
 }
 
 /* ---------------------------------------------------------------
@@ -334,8 +341,15 @@ int posicaoDoMaior(const int vetor[], int tamanho) {
  *       das fichas, e aparece em muitos testes!
  * --------------------------------------------------------------- */
 int procurarValor(const int vetor[], int tamanho, int valorProcurado) {
-    /* TODO */
-    return -2;
+    int i;
+
+    for (i = 0; i < tamanho; i++) {
+        if (vetor[i] == valorProcurado) {
+            return i;
+        }
+    }
+
+    return -1;
 }
 
 /* ---------------------------------------------------------------
@@ -344,7 +358,9 @@ int procurarValor(const int vetor[], int tamanho, int valorProcurado) {
  * DICA: parametros com *, e variavel auxiliar. Na chamada: &a, &b.
  * --------------------------------------------------------------- */
 void trocarInteiros(int *primeiro, int *segundo) {
-    /* TODO */
+    int auxiliar = *primeiro;
+    *primeiro = *segundo;
+    *segundo = auxiliar;
 }
 
 /* ---------------------------------------------------------------
@@ -354,7 +370,16 @@ void trocarInteiros(int *primeiro, int *segundo) {
  *       e, se estiverem na ordem errada, usa trocarInteiros.
  * --------------------------------------------------------------- */
 void ordenarVetor(int vetor[], int tamanho) {
-    /* TODO */
+    int i;
+    int j;
+
+    for (i = 0; i < tamanho - 1; i++) {
+        for (j = 0; j < tamanho - 1 - i; j++) {
+            if (vetor[j] > vetor[j + 1]) {
+                trocarInteiros(&vetor[j], &vetor[j + 1]);
+            }
+        }
+    }
 }
 
 /* ---------------------------------------------------------------
@@ -366,8 +391,17 @@ void ordenarVetor(int vetor[], int tamanho) {
  * DICA: ciclo de "posicao" ate "tamanho - 2": vetor[i] = vetor[i + 1].
  * --------------------------------------------------------------- */
 int removerPosicao(int vetor[], int tamanho, int posicao) {
-    /* TODO */
-    return -1;
+    int i;
+
+    if (posicao < 0 || posicao >= tamanho) {
+        return tamanho;
+    }
+
+    for (i = posicao; i < tamanho - 1; i++) {
+        vetor[i] = vetor[i + 1];
+    }
+
+    return tamanho - 1;
 }
 
 
@@ -380,16 +414,30 @@ int removerPosicao(int vetor[], int tamanho, int posicao) {
  * DICA: percorre ate encontrar '\0'. toupper() simplifica a comparacao.
  * --------------------------------------------------------------- */
 int contarVogais(const char texto[]) {
-    /* TODO */
-    return -1;
-}
+    int vogais = 0;
+    int i;
+    char letra;
 
+    for (i = 0; texto[i] != '\0'; i++) {
+        letra = (char) toupper((unsigned char) texto[i]);
+        if (letra == 'A' || letra == 'E' || letra == 'I' ||
+            letra == 'O' || letra == 'U') {
+            vogais++;
+            }
+    }
+
+    return vogais;
+}
 /* ---------------------------------------------------------------
  * converterParaMaiusculas
  * O QUE FAZ: passa todas as letras do texto para maiusculas (altera o proprio vetor).
  * --------------------------------------------------------------- */
 void converterParaMaiusculas(char texto[]) {
-    /* TODO */
+    int i;
+
+    for (i = 0; texto[i] != '\0'; i++) {
+        texto[i] = (char) toupper((unsigned char) texto[i]);
+    }
 }
 
 
@@ -470,8 +518,29 @@ int lerVetorDeTexto(const char nomeDoFicheiro[], int vetor[], int capacidade) {
  *       do vetor (deve ser igual a tamanho).
  * --------------------------------------------------------------- */
 int gravarVetorEmBinario(const char nomeDoFicheiro[], const int vetor[], int tamanho) {
-    /* TODO */
-    return -1;
+    FILE *f;
+    int escritos;
+
+    if (tamanho < 0) {
+        return 0;
+    }
+
+    f = fopen(nomeDoFicheiro, "wb");
+    if (f == NULL) {
+        return 0;
+    }
+
+    /* 1.º: a quantidade (um int) */
+    if (fwrite(&tamanho, sizeof(int), 1, f) != 1) {
+        fclose(f);
+        return 0;
+    }
+
+    /* 2.º: o vetor todo de uma só vez */
+    escritos = (int) fwrite(vetor, sizeof(int), tamanho, f);
+
+    fclose(f);
+    return escritos == tamanho;
 }
 
 /* ---------------------------------------------------------------
@@ -483,8 +552,33 @@ int gravarVetorEmBinario(const char nomeDoFicheiro[], const int vetor[], int tam
  *       fread do vetor (testa se devolveu a quantidade certa).
  * --------------------------------------------------------------- */
 int lerVetorDeBinario(const char nomeDoFicheiro[], int vetor[], int capacidade) {
-    /* TODO */
-    return -2;
+    FILE *f = fopen(nomeDoFicheiro, "rb");
+    int quantidade;
+
+    if (f == NULL) {
+        return -1;
+    }
+
+    /* 1.º: ler a quantidade guardada no ficheiro */
+    if (fread(&quantidade, sizeof(int), 1, f) != 1) {
+        fclose(f);
+        return -1;
+    }
+
+    /* 2.º: validar antes de ler (negativa ou maior que a capacidade) */
+    if (quantidade < 0 || quantidade > capacidade) {
+        fclose(f);
+        return -1;
+    }
+
+    /* 3.º: ler os elementos e confirmar que vieram todos */
+    if (fread(vetor, sizeof(int), quantidade, f) != (size_t) quantidade) {
+        fclose(f);
+        return -1;
+    }
+
+    fclose(f);
+    return quantidade;
 }
 
 /* ---------------------------------------------------------------
@@ -494,8 +588,16 @@ int lerVetorDeBinario(const char nomeDoFicheiro[], int vetor[], int capacidade) 
  * DICA: o modo "a" faz tudo isto.
  * --------------------------------------------------------------- */
 int acrescentarLinhaAoFicheiro(const char nomeDoFicheiro[], const char linha[]) {
-    /* TODO */
-    return -1;
+    FILE *f = fopen(nomeDoFicheiro, "a");
+
+    if (f == NULL) {
+        return 0;
+    }
+
+    fprintf(f, "%s\n", linha);
+
+    fclose(f);
+    return 1;
 }
 
 /* ---------------------------------------------------------------
@@ -505,8 +607,22 @@ int acrescentarLinhaAoFicheiro(const char nomeDoFicheiro[], const char linha[]) 
  * DICA: fgetc em ciclo ate EOF (a variavel e int!), conta os '\n'.
  * --------------------------------------------------------------- */
 int contarLinhasDoFicheiro(const char nomeDoFicheiro[]) {
-    /* TODO */
-    return -2;
+    FILE *f = fopen(nomeDoFicheiro, "r");
+    int c;
+    int linhas = 0;
+
+    if (f == NULL) {
+        return -1;
+    }
+
+    while ((c = fgetc(f)) != EOF) {
+        if (c == '\n') {
+            linhas++;
+        }
+    }
+
+    fclose(f);
+    return linhas;
 }
 
 /* ====================================================================
