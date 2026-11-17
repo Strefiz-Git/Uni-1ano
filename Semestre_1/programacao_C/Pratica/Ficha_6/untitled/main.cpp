@@ -267,7 +267,34 @@ char lerOpcaoValida(const char mensagem[], const char opcoesValidas[]) {
  *       Se contem, troca o '\n' por '\0'  (truque: strcspn(texto, "\n")).
  * --------------------------------------------------------------- */
 void lerTexto(const char mensagem[], char texto[], int tamanhoMaximo) {
-    /* TODO */
+    char *resultado;
+
+    if (tamanhoMaximo < 2) {
+        if (tamanhoMaximo == 1) {
+            texto[0] = '\0';
+        }
+        return;
+    }
+
+    do {
+        printf("%s", mensagem);
+        resultado = fgets(texto, tamanhoMaximo, stdin);
+
+        if (resultado == NULL) {
+            texto[0] = '\0';
+            return;
+        }
+
+        if (strchr(texto, '\n') == NULL) {
+            limparBufferTeclado();
+        } else {
+            texto[strcspn(texto, "\n")] = '\0';
+        }
+
+        if (texto[0] == '\0') {
+            printf("ERRO! O texto nao pode ser vazio.\n");
+        }
+    } while (texto[0] == '\0');
 }
 
 /* ---------------------------------------------------------------
