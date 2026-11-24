@@ -1,28 +1,32 @@
 #include <stdio.h>
+#include <string.h>
 #include <ctype.h>
 #include "funcoesalunos.h"
 
-// mostra o menu e devolve a opcao escolhida (em maiuscula)
+#define NOTA_MAX 20
+#define NOTA_POSITIVA 10
+#define NOTA_NAO_AVALIADO -1
+#define FICHEIRO_BINARIO "estudantes.dat"
+#define FICHEIRO_TEXTO "estudantes.txt"
+
 char menu(int numA, int numAval, float percPos) {
-    char opcao = 'F'; // se a entrada terminar (EOF), o programa fecha
-    printf("\n\n************************* Menu Principal *************************\n\n");
-    printf("Estudantes Inseridos : %d\n\n", numA);
-    printf("Estudantes Avaliados : %d                Notas Positivas (%%) : %.2f\n\n", numAval, percPos);
-    printf("A - Acrescentar Estudante\n");
+    char opcao = 'F';
+    printf("\n************************ Menu Principal ************************\n");
+    printf("Estudantes Inseridos: %d\n", numA);
+    printf("Estudantes Avaliados: %d                Notas Positivas (%%): %.2f\n\n", numAval, percPos);
+    printf("A - Acrescenta Estudante\n");
     printf("I - Introducao Notas\n");
     printf("N - Mudar Nota\n");
     printf("M - Mostrar Dados\n");
-    printf("G - Guardar dados em ficheiros\n");
-    printf("L - Ler dados de ficheiro binario\n");
-    printf("T - Ler dados de ficheiro de texto\n");
+    printf("G - Gravar dados em ficheiros\n");
+    printf("L - Ler dados de ficheiro\n");
     printf("F - Fim\n");
-    printf("        Opcao --> ");
+    printf("            Opcao--> ");
     scanf(" %c", &opcao);
     limpaBufferStdin();
     return (char)toupper(opcao);
 }
 
-// pede a quantidade de estudantes a acrescentar (0 cancela, maximo = lugares livres)
 int lerQuantidadeEstudantes(int max) {
     return lerInteiro("Quantos estudantes quer acrescentar (0 para cancelar)", 0, max);
 }
@@ -42,7 +46,6 @@ tipoEstudante lerDadosEstudante(tipoEstudante v[], int limite) {
     return e;
 }
 
-// pede a nota (e a data, uma so vez) apenas aos estudantes ainda nao avaliados
 void lerNotas(tipoEstudante v[], int limite) {
     int i;
     int pendentes = 0;
@@ -73,7 +76,6 @@ void lerNotas(tipoEstudante v[], int limite) {
     }
 }
 
-// altera a nota (e a data) de um estudante ja existente
 void mudarNota(tipoEstudante v[], int limite) {
     int num;
     int pos;
@@ -116,7 +118,6 @@ void mostrarDados(tipoEstudante v[], int limite) {
     }
 }
 
-// acrescenta um estudante (com nota opcional) e devolve a nova quantidade
 int acrescentaAvaliado(tipoEstudante v[], int limite) {
     tipoEstudante novo;
     if (limite >= MAX_ESTUDANTES) {
@@ -134,7 +135,6 @@ int acrescentaAvaliado(tipoEstudante v[], int limite) {
     return limite + 1;
 }
 
-// pergunta quantos estudantes acrescentar, le os dados de cada um e devolve a nova quantidade
 int acrescentaEstudantes(tipoEstudante v[], int limite) {
     int livres = MAX_ESTUDANTES - limite;
     int total;
@@ -162,7 +162,6 @@ int procuraEstudante(tipoEstudante v[], int limite, int numAProcurar) {
     return resultado;
 }
 
-// calcula a quantidade de estudantes avaliados e a percentagem de notas positivas
 void contas(tipoEstudante v[], int limite, int *numAval, float *percPos) {
     int i;
     int positivas = 0;
@@ -196,4 +195,110 @@ float obterMedia(tipoEstudante v[], int limite) {
         return 0;
     }
     return (float)soma / avaliados;
+}
+
+void gravaFicheiroBinario(tipoEstudante v[], int limite) {
+    FILE *ficheiro = fopen(FICHEIRO_BINARIO, "wb");
+    if (ficheiro == NULL) {
+        printf("Erro ao abrir o ficheiro %s!\n", FICHEIRO_BINARIO);
+        return;
+    }
+    fwrite(&limite, sizeof(int), 1, ficheiro);
+    fwrite(v, sizeof(tipoEstudante), limite, ficheiro);
+    fclose(ficheiro);
+    printf("Dados gravados em %s\n", FICHEIRO_BINARIO);
+}
+
+int leFicheiroBinario(tipoEstudante v[]) {
+    int quantidade = 0;
+    tipoEstudante temporarios[MAX_ESTUDANTES];
+    FILE *ficheiro = fopen(FICHEIRO_BINARIO, "rb");
+    if (ficheiro == NULL) {
+        printf("Erro ao abrir o ficheiro %s!\n", FICHEIRO_BINARIO);
+        return -1;
+    }
+    if (fread(&quantidade, sizeof(int), 1, ficheiro) != 1 || quantidade < 0 || quantidade > MAX_ESTUDANTES) {
+        printf("Ficheiro invalido!\n");
+        fclose(ficheiro);
+        return -1;
+    }
+    if ((int)fread(temporarios, sizeof(tipoEstudante), quantidade, ficheiro) != quantidade) {
+        printf("Ficheiro invalido ou incompleto!\n");
+        fclose(ficheiro);
+        return -1;
+    }
+    fclose(ficheiro);
+    memcpy(v, temporarios, sizeof(tipoEstudante) * quantidade);
+    printf("Lidos %d estudantes de %s\n", quantidade, FICHEIRO_BINARIO);
+    return quantidade;
+}
+
+void gravaFicheiroTexto(tipoEstudante v[], int limite) {
+    int i;
+    int numAval;
+    float percPos;
+    FILE *ficheiro = fopen(FICHEIRO_TEXTO, "w");
+    if (ficheiro == NULL) {
+        printf("Erro ao abrir o ficheiro %s!\n", FICHEIRO_TEXTO);
+        return;
+    }
+    contas(v, limite, &numAval, &percPos);
+    fprintf(ficheiro, "Numero;Nome;Nota;Data\n");
+    for (i = 0; i < limite; i++) {
+        if (v[i].nota == NOTA_NAO_AVALIADO) {
+            fprintf(ficheiro, "%d;%s;Nao avaliado;-\n", v[i].numero, v[i].nome);
+        } else {
+            fprintf(ficheiro, "%d;%s;%d;%02d/%02d/%d\n", v[i].numero, v[i].nome, v[i].nota,
+                    v[i].dataAvaliacao.dia, v[i].dataAvaliacao.mes, v[i].dataAvaliacao.ano);
+        }
+    }
+    fprintf(ficheiro, "Media: %.2f\n", obterMedia(v, limite));
+    fprintf(ficheiro, "Notas positivas (%%): %.2f\n", percPos);
+    fclose(ficheiro);
+    printf("Dados gravados em %s\n", FICHEIRO_TEXTO);
+}
+
+int leFicheiroTexto(tipoEstudante v[]) {
+    char linha[256];
+    int quantidade = 0;
+    tipoEstudante temporarios[MAX_ESTUDANTES];
+    FILE *ficheiro = fopen(FICHEIRO_TEXTO, "r");
+    if (ficheiro == NULL) {
+        printf("Erro ao abrir o ficheiro %s!\n", FICHEIRO_TEXTO);
+        return -1;
+    }
+    if (fgets(linha, sizeof(linha), ficheiro) == NULL || strncmp(linha, "Numero;Nome;Nota;Data", 21) != 0) {
+        printf("Ficheiro invalido!\n");
+        fclose(ficheiro);
+        return -1;
+    }
+    while (fgets(linha, sizeof(linha), ficheiro) != NULL) {
+        tipoEstudante e;
+        int consumidos = 0;
+        char *resto;
+        if (sscanf(linha, "%d;%49[^;];%n", &e.numero, e.nome, &consumidos) != 2 || consumidos == 0) {
+            break;
+        }
+        if (quantidade >= MAX_ESTUDANTES || e.numero < 1 || e.numero > 9999) {
+            printf("Ficheiro invalido!\n");
+            fclose(ficheiro);
+            return -1;
+        }
+        resto = linha + consumidos;
+        if (strncmp(resto, "Nao avaliado", 12) == 0) {
+            e.nota = NOTA_NAO_AVALIADO;
+            e.dataAvaliacao = (tipoData){0, 0, 0};
+        } else if (sscanf(resto, "%d;%d/%d/%d", &e.nota, &e.dataAvaliacao.dia,
+                          &e.dataAvaliacao.mes, &e.dataAvaliacao.ano) != 4
+                   || e.nota < 0 || e.nota > NOTA_MAX) {
+            printf("Ficheiro invalido!\n");
+            fclose(ficheiro);
+            return -1;
+        }
+        temporarios[quantidade++] = e;
+    }
+    fclose(ficheiro);
+    memcpy(v, temporarios, sizeof(tipoEstudante) * quantidade);
+    printf("Lidos %d estudantes de %s\n", quantidade, FICHEIRO_TEXTO);
+    return quantidade;
 }
