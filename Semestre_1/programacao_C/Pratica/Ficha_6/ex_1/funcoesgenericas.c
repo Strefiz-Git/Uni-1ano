@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include "funcoesgenericas.h"
@@ -17,7 +16,7 @@ void limpaBufferStdin(void) {
 }
 
 int lerInteiro(char mensagem[], int minimo, int maximo) {
-    int numero = minimo;
+    int numero;
     int controlo;
     do {
         printf("%s (%d a %d) : ", mensagem, minimo, maximo);
@@ -25,8 +24,6 @@ int lerInteiro(char mensagem[], int minimo, int maximo) {
         limpaBufferStdin();
         if (controlo == 0) {
             printf("\nERRO!, nao escreveu um numero\n");
-        } else if (controlo == EOF) {
-            return minimo;
         } else if (numero < minimo || numero > maximo) {
             printf("\nERRO!, valor fora da escala\n");
         }
@@ -37,10 +34,7 @@ int lerInteiro(char mensagem[], int minimo, int maximo) {
 void lerString(char mensagem[], char vetorCaracteres[], int maximoCaracteres) {
     do {
         printf("%s", mensagem);
-        if (fgets(vetorCaracteres, maximoCaracteres, stdin) == NULL) {
-            strcpy(vetorCaracteres, "?");
-            return;
-        }
+        fgets(vetorCaracteres, maximoCaracteres, stdin);
         if (strchr(vetorCaracteres, '\n') == NULL) {
             limpaBufferStdin();
         } else {
@@ -64,9 +58,9 @@ tipoData obterDataAtual(void) {
 
 int obterDiaMaximo(int ano, int mes) {
     if (mes == 2) {
-        if (ano % 4 == 0 && (ano % 100 != 0 || ano % 400 == 0)) { // ano bissexto
+        if (ano % 4 == 0 && (ano % 100 != 0 || ano % 400 == 0)) {
             return 29;
-        } else { // ano nao bissexto
+        } else {
             return 28;
         }
     }

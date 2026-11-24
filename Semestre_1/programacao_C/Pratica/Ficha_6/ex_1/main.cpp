@@ -3,48 +3,45 @@
 #include "funcoesalunos.h"
 
 int main(void) {
-    tipoEstudante turma[MAX_ESTUDANTES];
+    tipoEstudante vetorEstudantes[MAX_ESTUDANTES];
     int numAlunos = 0;
     int numAval = 0;
     int lidos;
     float percPos = 0;
     char op;
 
-    // sem buffer: o texto aparece logo
-    setvbuf(stdout, NULL, _IONBF, 0);
-
     do {
-        contas(turma, numAlunos, &numAval, &percPos);
+        contas(vetorEstudantes, numAlunos, &numAval, &percPos);
         op = menu(numAlunos, numAval, percPos);
         switch (op) {
             case 'A':
-                numAlunos = acrescentaEstudantes(turma, numAlunos);
+                numAlunos = acrescentaEstudantes(vetorEstudantes, numAlunos);
                 continuar();
                 break;
             case 'I':
-                lerNotas(turma, numAlunos);
+                lerNotas(vetorEstudantes, numAlunos);
                 continuar();
                 break;
             case 'N':
-                mudarNota(turma, numAlunos);
+                mudarNota(vetorEstudantes, numAlunos);
                 continuar();
                 break;
             case 'M':
-                mostrarDados(turma, numAlunos);
+                mostrarDados(vetorEstudantes, numAlunos);
                 if (numAval > 0) {
-                    printf("Media das notas: %.2f\n", obterMedia(turma, numAlunos));
+                    printf("Media das notas: %.2f\n", obterMedia(vetorEstudantes, numAlunos));
                     printf("Notas positivas (%%): %.2f\n", percPos);
                 }
                 continuar();
                 break;
             case 'G':
-                gravaFicheiroBinario(turma, numAlunos);
-                gravaFicheiroTexto(turma, numAlunos);
+                gravaFicheiroBinario(vetorEstudantes, numAlunos);
+                gravaFicheiroTexto(vetorEstudantes, numAlunos);
                 continuar();
                 break;
             case 'L':
-                lidos = leFicheiroBinario(turma);
-                if (lidos >= 0) { // so substitui os dados se a leitura correu bem
+                lidos = leFicheiroBinario(vetorEstudantes);
+                if (lidos >= 0) {
                     numAlunos = lidos;
                 }
                 continuar();

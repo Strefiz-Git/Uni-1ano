@@ -27,6 +27,5 @@ char menu(int numA, int numAval, float percPos);
 void gravaFicheiroBinario(tipoEstudante v[], int limite);
 int leFicheiroBinario(tipoEstudante v[]);
 void gravaFicheiroTexto(tipoEstudante v[], int limite);
-int leFicheiroTexto(tipoEstudante v[]);
 
 #endif
