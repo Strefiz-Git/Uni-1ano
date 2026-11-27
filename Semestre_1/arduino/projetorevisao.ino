@@ -1,126 +1,138 @@
 const int buttonPin = 2;
 const int ledPin = LED_BUILTIN;
 const int ledVermelhoPin = 4; // led emergencia
-const int ledAmareloPin = 6; // led pwm
-
-int ledVermelhoState = LOW; // estado do led vermelho
-float ledAmareloState = 0.0; // estado do led amarelo
+const int ledAmareloPin = 6;  // led pwm
 
 const float GANHO = 4.0;
+const int LIMIAR_LDR = 512;   
 
-int buttonState = 0;
+int luzLigada = 0;            
+int lastButtonState = LOW;    
 
+int ledVermelhoState = LOW;
+int pwmValor = 0;             // 0 a 255
+
+unsigned long ultimoPrint = 0;
 
 void setup()
 {
-  Serial.begin(9600);
-  pinMode(ledPin, OUTPUT);
-  pinMode(ledVermelhoPin, OUTPUT);
-  pinMode(ledAmareloPin, OUTPUT);
-  pinMode(buttonPin, INPUT);
+    Serial.begin(9600);
+    pinMode(ledPin, OUTPUT);
+    pinMode(ledVermelhoPin, OUTPUT);
+    pinMode(ledAmareloPin, OUTPUT);
+    pinMode(buttonPin, INPUT);
 }
 
-void buttonLogic() //toggle
+void buttonLogic() // toggle
 {
-    int checkButtonState = digitalRead(buttonPin);  
-    if (checkButtonState == HIGH) {
-        buttonState = !buttonState; 
-        if(buttonState == HIGH){
+    int buttonState = digitalRead(buttonPin);
+    if (buttonState == HIGH && lastButtonState == LOW) {
+        if (luzLigada == 0) {
+            luzLigada = 1;
             digitalWrite(ledPin, HIGH);
-        }else{
+        } else {
+            luzLigada = 0;
             digitalWrite(ledPin, LOW);
         }
+            delay(30);
     }
+    lastButtonState = buttonState;
 }
 
-float temperatura(int a1){
+float temperatura(int a1)
+{
     float v0 = a1 * (5.0 / 1023.0);
-    float temp = (v0 / GANHO - 0.5) * 100.0;
-    return temp;
+    return (v0 / GANHO - 0.5) * 100.0;
 }
 
-int verDiaNoite() // dia = 1 | noite = 0
+int verDiaNoite(int ldr) // dia = 1 | noite = 0
 {
     int estadoLuz = 0;
-    if (analogRead(A0) < 400) {
-        estadoLuz = 0; 
+    if (ldr < LIMIAR_LDR) { // ldr < 512 => noite
+        estadoLuz = 0;
     } else {
-        estadoLuz = 1; 
+        estadoLuz = 1;
     }
     return estadoLuz;
 }
 
 void leds(float temp, int estadoLuz)
 {
-    if(temp <= 30.0 && temp >= 15.0)
-    {
-        digitalWrite(ledVermelhoPin, LOW);  
-        ledVermelhoState = LOW;
-    }else{
-        digitalWrite(ledVermelhoPin, HIGH);  
-        ledVermelhoState = HIGH;
+    int pwm = 0;
+    int vermelho = 0;
+
+    if (temp < 15.0 || temp > 30.0) {
+        vermelho = 1;
     }
-    if(buttonState == HIGH){
-        if(estadoLuz == 1)
-        {
-            analogWrite(ledAmareloPin, 0);
-            ledAmareloState = 0.0;
-        }else{
-            if(temp < 15.0){
-                analogWrite(ledAmareloPin, 255);
-                ledAmareloState = 1.0;
-            }else{
-                analogWrite(ledAmareloPin, 0.25*255);
-                ledAmareloState = 0.25;
-            }
+    if (estadoLuz == 0) { // NOITE
+        if (temp < 15.0) {
+            pwm = 255;
+        } else {
+            pwm = 64; // 25% 0.25*255        
         }
     }
+
+    if (vermelho == 1) {
+        digitalWrite(ledVermelhoPin, HIGH);
+        ledVermelhoState = HIGH;
+    } else {
+        digitalWrite(ledVermelhoPin, LOW);
+        ledVermelhoState = LOW;
+    }
+
+    analogWrite(ledAmareloPin, pwm);
+    pwmValor = pwm;
 }
 
-void mostrarDados(float temp, int estadoLuz)
+void mostrarDados(float temp, int ldr, int estadoLuz)
 {
-    Serial.println("Estado do botao: ");
-    if(buttonState == HIGH) {
-        Serial.println("Pressionado");
-    } else {
-        Serial.println("Nao pressionado");
-    }
     Serial.print("Temperatura: ");
     Serial.print(temp);
-    Serial.print(" [C] | Estado da luz: ");
+    Serial.println(" [C]");
+
+    Serial.print("Tensao LDR: ");
+    Serial.print(ldr * (5.0 / 1023.0));
+    Serial.println(" [V]");
+
+    Serial.print("Periodo: ");
     if (estadoLuz == 1) {
         Serial.println("Dia");
     } else {
         Serial.println("Noite");
     }
-    Serial.print("Estado do LED Vermelho: ");
+
+    Serial.print("Luz da estufa (botao): ");
+    if (luzLigada == 1) {
+        Serial.println("Ligada");
+    } else {
+        Serial.println("Desligada");
+    }
+
+    Serial.print("LED vermelho: ");
     if (ledVermelhoState == HIGH) {
         Serial.println("Ligado");
     } else {
         Serial.println("Desligado");
     }
-    Serial.print("Estado do LED Amarelo: ");
-    if (ledAmareloState == 1.0) {
-        Serial.println("Ligado a 100%");
-    } else if (ledAmareloState == 0.25) {
-        Serial.println("Ligado a 25%");
-    } else {
-        Serial.println("Desligado");
-    }
+
+    Serial.print("PWM: ");
+    Serial.print(pwmValor);
+    Serial.print(" (");
+    Serial.print(pwmValor * 100 / 255);
+    Serial.println("%)");
+
     Serial.println("-----------------------------");
 }
 
 void loop()
 {
-    buttonLogic();
-    
-    int a1 = analogRead(A1);
+    buttonLogic(); 
 
-    float temp = temperatura(a1);
-    int estadoLuz = verDiaNoite();
-    
+    float temp = temperatura(analogRead(A1));
+    int ldr = analogRead(A0);
+    int estadoLuz = verDiaNoite(ldr);
+
     leds(temp, estadoLuz);
-    mostrarDados(temp, estadoLuz);
-
+    mostrarDados(temp, ldr, estadoLuz);
     delay(1000);
 }
