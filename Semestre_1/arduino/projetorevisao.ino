@@ -6,10 +6,8 @@ const int ledAmareloPin = 6;  // led pwm
 const float GANHO = 4.0;
 const int LIMIAR_LDR = 512;   
 
-int luzLigada = 0;            
+int luzLigada = 1;            // 1 = dinamica | 0 = forcada a desligar
 int lastButtonState = LOW;    
-
-int luzForcadaOff = 0;        // NOVO: 0 = dinamica | 1 = forcada a desligar
 
 int ledVermelhoState = LOW;
 int pwmValor = 0;             // 0 a 255
@@ -23,6 +21,7 @@ void setup()
     pinMode(ledVermelhoPin, OUTPUT);
     pinMode(ledAmareloPin, OUTPUT);
     pinMode(buttonPin, INPUT);
+    digitalWrite(ledPin, HIGH); 
 }
 
 void buttonLogic() // toggle
@@ -36,13 +35,6 @@ void buttonLogic() // toggle
             luzLigada = 0;
             digitalWrite(ledPin, LOW);
         }
-
-        if (luzForcadaOff == 0) {
-            luzForcadaOff = 1;
-        } else {
-            luzForcadaOff = 0;
-        }
-
             delay(30);
     }
     lastButtonState = buttonState;
@@ -81,7 +73,7 @@ void leds(float temp, int estadoLuz)
         }
     }
 
-    if (luzForcadaOff == 1) {
+    if (luzLigada == 0) {
         pwm = 0;
     }
 
@@ -116,9 +108,9 @@ void mostrarDados(float temp, int ldr, int estadoLuz)
 
     Serial.print("Luz da estufa (botao): ");
     if (luzLigada == 1) {
-        Serial.println("Ligada");
+        Serial.println("Ligada (dinamica)");   
     } else {
-        Serial.println("Desligada");
+        Serial.println("Desligada (forcada)"); 
     }
 
     Serial.print("LED vermelho: ");
