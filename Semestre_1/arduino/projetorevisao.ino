@@ -9,6 +9,8 @@ const int LIMIAR_LDR = 512;
 int luzLigada = 0;            
 int lastButtonState = LOW;    
 
+int luzForcadaOff = 0;        // NOVO: 0 = dinamica | 1 = forcada a desligar
+
 int ledVermelhoState = LOW;
 int pwmValor = 0;             // 0 a 255
 
@@ -34,6 +36,13 @@ void buttonLogic() // toggle
             luzLigada = 0;
             digitalWrite(ledPin, LOW);
         }
+
+        if (luzForcadaOff == 0) {
+            luzForcadaOff = 1;
+        } else {
+            luzForcadaOff = 0;
+        }
+
             delay(30);
     }
     lastButtonState = buttonState;
@@ -70,6 +79,10 @@ void leds(float temp, int estadoLuz)
         } else {
             pwm = 64; // 25% 0.25*255        
         }
+    }
+
+    if (luzForcadaOff == 1) {
+        pwm = 0;
     }
 
     if (vermelho == 1) {
